@@ -44,11 +44,19 @@ impl File {
     }
 
     pub fn read_to_byte_array(&self) -> std::io::Result<Vec<u8>> {
-        std::fs::read(&self.path)
+        if self.exists() {
+            std::fs::read(&self.path)
+        } else {
+            Err(Error::new(ErrorKind::Other, "File doesn't exist"))
+        }
     }
 
     pub fn read_to_string(&self) -> std::io::Result<String> {
-        std::fs::read_to_string(&self.path)
+        if self.exists() {
+            std::fs::read_to_string(&self.path)
+        } else {
+            Err(Error::new(ErrorKind::Other, "File doesn't exist"))
+        }
     }
 
     pub fn write_string(&self, content: String) -> std::io::Result<()> {
@@ -96,7 +104,11 @@ impl File {
     }
 
     pub fn delete(&self) -> std::io::Result<()> {
-        std::fs::remove_file(&self.path)
+        if self.exists() {
+            std::fs::remove_file(&self.path)
+        } else {
+            Ok(())
+        }
     }
 }
 

@@ -7,7 +7,7 @@ use crate::path_filter::PathFilter;
 
 #[derive(Debug)]
 pub struct Directory {
-    pub(crate) path: PathBuf
+    pub(crate) path: PathBuf,
 }
 
 impl Directory {
@@ -34,40 +34,48 @@ impl Directory {
         }
     }
 
-    pub fn files(&self) -> Vec<File> {
-        let mut result = Vec::new();
+    pub fn files(&self) -> std::io::Result<Vec<File>> {
+        if self.exists() {
+            let mut result = Vec::new();
 
-        for entry in WalkDir::new(&self.path)
-            .min_depth(1)
-            .max_depth(1)
-            .follow_links(true)
-            .into_iter()
-            .filter_map(|e| e.ok())
-        {
-            if entry.file_type().is_file() {
-                result.push(File::from(entry.path()));
+            for entry in WalkDir::new(&self.path)
+                .min_depth(1)
+                .max_depth(1)
+                .follow_links(true)
+                .into_iter()
+            {
+                let entry = entry?;
+                if entry.file_type().is_file() {
+                    result.push(File::from(entry.path()));
+                }
             }
-        }
 
-        result
+            Ok(result)
+        } else {
+            Err(Error::new(ErrorKind::Other, "Directory doesn't exist"))
+        }
     }
 
-    pub fn directories(&self) -> Vec<Directory> {
-        let mut result = Vec::new();
+    pub fn directories(&self) -> std::io::Result<Vec<Directory>> {
+        if self.exists() {
+            let mut result = Vec::new();
 
-        for entry in WalkDir::new(&self.path)
-            .min_depth(1)
-            .max_depth(1)
-            .follow_links(true)
-            .into_iter()
-            .filter_map(|e| e.ok())
-        {
-            if entry.file_type().is_dir() {
-                result.push(Directory::from(entry.path()));
+            for entry in WalkDir::new(&self.path)
+                .min_depth(1)
+                .max_depth(1)
+                .follow_links(true)
+                .into_iter()
+            {
+                let entry = entry?;
+                if entry.file_type().is_dir() {
+                    result.push(Directory::from(entry.path()));
+                }
             }
-        }
 
-        result
+            Ok(result)
+        } else {
+            Err(Error::new(ErrorKind::Other, "Directory doesn't exist"))
+        }
     }
 
     pub fn exists(&self) -> bool {
@@ -75,7 +83,11 @@ impl Directory {
     }
 
     pub fn delete(&self) -> std::io::Result<()> {
-        std::fs::remove_dir_all(&self.path)
+        if self.exists() {
+            std::fs::remove_dir_all(&self.path)
+        } else {
+            Ok(())
+        }
     }
 }
 
@@ -93,7 +105,7 @@ impl From<PathBuf> for Directory {
     }
 }
 
-impl <'a> From<Cow<'a, Path>> for Directory {
+impl<'a> From<Cow<'a, Path>> for Directory {
     fn from(path_cow: Cow<'a, Path>) -> Self {
         Self::from(PathBuf::from(path_cow))
     }
