@@ -52,15 +52,27 @@ impl File {
     }
 
     pub fn write_string(&self, content: String) -> std::io::Result<()> {
+        let maybe_parent = &self.path.parent();
+        if let Some(parent) = maybe_parent {
+            std::fs::create_dir_all(parent)?;
+        }
         std::fs::write(&self.path, content)
     }
 
     pub fn write_byte_array(&self, content: Vec<u8>) -> std::io::Result<()> {
+        let maybe_parent = &self.path.parent();
+        if let Some(parent) = maybe_parent {
+            std::fs::create_dir_all(parent)?;
+        }
         std::fs::write(&self.path, content)
     }
 
     pub fn copy(&self, destination: &Path) -> std::io::Result<()> {
         if PathFilter::is_whitelisted(&PathBuf::from(destination))? {
+            let maybe_dest_parent = destination.parent();
+            if let Some(dest_parent) = maybe_dest_parent {
+                std::fs::create_dir_all(dest_parent)?;
+            }
             std::fs::copy(&self.path, destination).map(|_| ())
         } else {
             Err(Error::new(ErrorKind::Other, "Destination is not within allowed directory"))
@@ -69,6 +81,10 @@ impl File {
 
     pub fn move_file(&self, destination: &Path) -> std::io::Result<()> {
         if PathFilter::is_whitelisted(&PathBuf::from(destination))? {
+            let maybe_dest_parent = destination.parent();
+            if let Some(dest_parent) = maybe_dest_parent {
+                std::fs::create_dir_all(dest_parent)?;
+            }
             std::fs::rename(&self.path, destination)
         } else {
             Err(Error::new(ErrorKind::Other, "Destination is not within allowed directory"))

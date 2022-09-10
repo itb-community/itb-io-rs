@@ -160,11 +160,13 @@ impl LuaUserData for Directory {
         });
 
         methods.add_method("files", |_, this, ()| {
-            Ok(this.files())
+            this.files()
+                .map_err(external_lua_error)
         });
 
         methods.add_method("directories", |_, this, ()| {
-            Ok(this.directories())
+            this.directories()
+                .map_err(external_lua_error)
         });
 
         methods.add_method("exists", |_, this, ()| {
