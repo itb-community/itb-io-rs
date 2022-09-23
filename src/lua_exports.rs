@@ -72,8 +72,6 @@ fn normalize(path: PathBuf) -> PathBuf {
     }
 }
 
-
-
 impl LuaUserData for File {
     fn add_methods<'lua, M: UserDataMethods<'lua, Self>>(methods: &mut M) {
         methods.add_method("path", |_, this, ()| {
@@ -166,6 +164,11 @@ impl LuaUserData for Directory {
 
         methods.add_method("directories", |_, this, ()| {
             this.directories()
+                .map_err(external_lua_error)
+        });
+
+        methods.add_method("make_directories", |_, this, ()| {
+            this.make_directories()
                 .map_err(external_lua_error)
         });
 

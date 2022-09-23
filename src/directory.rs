@@ -78,6 +78,14 @@ impl Directory {
         }
     }
 
+    pub fn make_directories(&self) -> std::io::Result<()> {
+        if PathFilter::is_whitelisted(&self.path)? {
+            std::fs::create_dir_all(&self.path)
+        } else {
+            Err(Error::new(ErrorKind::Other, "Path does not point to an allowed directory"))
+        }
+    }
+
     pub fn exists(&self) -> bool {
         self.path.exists()
     }
