@@ -12,7 +12,9 @@ pub struct Directory {
 
 impl Directory {
     pub fn path(&self) -> String {
-        self.path.to_str().unwrap().to_string().replace("\\", "/")
+        // Have directories report their path with a trailing slash, since that's sometimes
+        // convenient when working with paths in Lua.
+        self.path.to_str().unwrap().to_string().replace("\\", "/") + "/"
     }
 
     pub fn name(&self) -> String {
@@ -116,5 +118,19 @@ impl From<PathBuf> for Directory {
 impl<'a> From<Cow<'a, Path>> for Directory {
     fn from(path_cow: Cow<'a, Path>) -> Self {
         Self::from(PathBuf::from(path_cow))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::PathBuf;
+    use crate::directory::Directory;
+
+    #[test]
+    fn test() {
+        let dir = Directory::from(PathBuf::from("asd"));
+
+        assert_eq!("asd/", dir.path());
+        assert_eq!("asd", dir.path.to_str().unwrap())
     }
 }
