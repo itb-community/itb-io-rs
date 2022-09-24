@@ -12,7 +12,7 @@ pub struct File {
 
 impl File {
     pub fn path(&self) -> String {
-        self.path.to_str().unwrap().to_string()
+        self.path.to_str().unwrap().to_string().replace("\\", "/")
     }
 
     pub fn name(&self) -> String {

@@ -12,7 +12,7 @@ pub struct Directory {
 
 impl Directory {
     pub fn path(&self) -> String {
-        self.path.to_str().unwrap().to_string()
+        self.path.to_str().unwrap().to_string().replace("\\", "/")
     }
 
     pub fn name(&self) -> String {
