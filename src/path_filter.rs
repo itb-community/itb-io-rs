@@ -73,61 +73,45 @@ impl PathFilter {
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
+    use std::fs::OpenOptions;
+    use tempfile::tempdir;
     use crate::path_filter::PathFilter;
 
     #[test]
-    fn test() {
-        let path = PathBuf::from(".");
-        let result = PathFilter::is_save_data_location_valid(&path);
+    fn empty_dir_should_not_be_valid_save_data_location() {
+        let tmp_dir = tempdir().unwrap();
+        let result = PathFilter::is_save_data_location_valid(tmp_dir.path());
 
         assert!(!result);
     }
 
     #[test]
-    fn test2() {
-        let path = PathBuf::from("E:/Users/Tomek/Documents/My Games/Into the Breach");
-        let result = PathFilter::is_save_data_location_valid(&path);
+    fn dir_containing_io_test_should_be_valid_save_data_location() {
+        let tmp_dir = tempdir().unwrap();
+        let tmp_file = OpenOptions::new()
+            .create_new(true)
+            .write(true)
+            .append(true)
+            .open(tmp_dir.path().join("io_test.txt"))
+            .unwrap();
+
+        let result = PathFilter::is_save_data_location_valid(tmp_dir.path());
 
         assert!(result);
+
+        drop(tmp_file);
     }
 
     #[test]
-    fn test3() {
+    fn dir_returned_by_save_data_directory_should_be_valid_save_data_location() {
         let maybe_dir = PathFilter::save_data_directory();
 
         if maybe_dir.is_err() {
-            panic!("{}", maybe_dir.err().unwrap());
+            panic!("Could not find save data directory, is ITB installed? {}", maybe_dir.err().unwrap());
         }
 
-        let dir = maybe_dir.unwrap();
-        println!("save data dir: {:?}", dir)
-    }
+        let result = PathFilter::is_save_data_location_valid(maybe_dir.unwrap());
 
-    #[test]
-    fn test4() {
-        let path = PathBuf::from("E:/Users/Tomek/Documents/My Games/Into the Breach");
-
-        for component in path.components().into_iter() {
-            println!("{:?}", component)
-        }
-    }
-
-    #[test]
-    fn test5() {
-        let path = PathBuf::from("Users/Tomek/Documents/My Games/Into the Breach");
-
-        for component in path.components().into_iter() {
-            println!("{:?}", component)
-        }
-    }
-
-    #[test]
-    fn test6() {
-        let path = PathBuf::from("./Users/Tomek/Documents/My Games/Into the Breach");
-
-        for component in path.components().into_iter() {
-            println!("{:?}", component)
-        }
+        assert!(result);
     }
 }
