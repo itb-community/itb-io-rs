@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use std::io::{Error, ErrorKind};
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
@@ -101,34 +100,21 @@ impl Directory {
     }
 }
 
-impl From<&Path> for Directory {
-    fn from(path: &Path) -> Self {
+impl <P: AsRef<Path>> From<P> for Directory where PathBuf: From<P> {
+    fn from(path: P) -> Self {
         Directory {
             path: PathBuf::from(path)
         }
     }
 }
 
-impl From<PathBuf> for Directory {
-    fn from(path: PathBuf) -> Self {
-        Directory { path }
-    }
-}
-
-impl<'a> From<Cow<'a, Path>> for Directory {
-    fn from(path_cow: Cow<'a, Path>) -> Self {
-        Self::from(PathBuf::from(path_cow))
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
     use crate::directory::Directory;
 
     #[test]
     fn test() {
-        let dir = Directory::from(PathBuf::from("asd"));
+        let dir = Directory::from("asd");
 
         assert_eq!("asd/", dir.path());
         assert_eq!("asd", dir.path.to_str().unwrap())

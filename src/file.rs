@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use std::io::{Error, ErrorKind};
 use std::path::{Path, PathBuf};
 
@@ -112,22 +111,10 @@ impl File {
     }
 }
 
-impl From<&Path> for File {
-    fn from(path: &Path) -> Self {
+impl <P: AsRef<Path>> From<P> for File where PathBuf: From<P> {
+    fn from(path: P) -> Self {
         File {
-            path: path.to_path_buf()
+            path: PathBuf::from(path)
         }
-    }
-}
-
-impl From<PathBuf> for File {
-    fn from(path: PathBuf) -> Self {
-        File { path }
-    }
-}
-
-impl <'a> From<Cow<'a, Path>> for File {
-    fn from(path_cow: Cow<'a, Path>) -> Self {
-        Self::from(PathBuf::from(path_cow))
     }
 }
