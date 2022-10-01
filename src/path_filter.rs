@@ -13,8 +13,8 @@ lazy_static! {
 }
 
 impl PathFilter {
-    pub fn is_whitelisted(path: &Path) -> std::io::Result<bool> {
-        let normalized_path = path.absolutize()?;
+    pub fn is_whitelisted<P: AsRef<Path>>(path: P) -> std::io::Result<bool> {
+        let normalized_path = path.as_ref().absolutize()?;
 
         let result = normalized_path.starts_with(PathFilter::game_directory()?)
             || normalized_path.starts_with(PathFilter::save_data_directory()?);
@@ -51,7 +51,7 @@ impl PathFilter {
                 candidates.push(PathBuf::from("./user"));
 
                 let first_valid_candidate = candidates.into_iter()
-                    .find(PathFilter::is_save_data_location_valid)
+                    .find(|it| PathFilter::is_save_data_location_valid(it))
                     .ok_or(Error::new(ErrorKind::Other, "Could not find a valid save data location"))?;
                 let save_data_dir_cow = first_valid_candidate.absolutize()?;
                 let save_data_dir = match save_data_dir_cow {
@@ -66,8 +66,8 @@ impl PathFilter {
         }
     }
 
-    fn is_save_data_location_valid(path: &PathBuf) -> bool {
-        path.join("io_test.txt").exists()
+    fn is_save_data_location_valid<P: AsRef<Path>>(path: P) -> bool {
+        path.as_ref().join("io_test.txt").exists()
     }
 }
 
