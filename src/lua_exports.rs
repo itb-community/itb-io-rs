@@ -2,7 +2,7 @@ use std::error::Error;
 use std::path::{Component, PathBuf};
 use std::sync::Arc;
 
-use mlua::{Lua, UserDataMethods};
+use mlua::{Lua, UserDataMethods, Variadic};
 use mlua::prelude::{LuaError, LuaResult, LuaTable, LuaUserData};
 use path_absolutize::Absolutize;
 
@@ -154,6 +154,16 @@ impl LuaUserData for Directory {
 
         methods.add_method("parent", |_, this, ()| {
             this.parent()
+                .map_err(external_lua_error)
+        });
+
+        methods.add_method("file", |_, this, (paths,): (Variadic<String>,)| {
+            this.file(paths.to_vec())
+                .map_err(external_lua_error)
+        });
+
+        methods.add_method("directory", |_, this, (paths,): (Variadic<String>,)| {
+            this.directory(paths.to_vec())
                 .map_err(external_lua_error)
         });
 
