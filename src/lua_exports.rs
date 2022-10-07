@@ -110,6 +110,11 @@ impl LuaUserData for File {
                 .map_err(external_lua_error)
         });
 
+        methods.add_method("append_string", |_, this, (content, ): (String, )| {
+            this.append_string(content)
+                .map_err(external_lua_error)
+        });
+
         methods.add_method("write_byte_array", |_, this, (content, ): (Vec<u8>, )| {
             this.write_byte_array(content)
                 .map_err(external_lua_error)

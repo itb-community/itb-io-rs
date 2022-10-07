@@ -1,4 +1,5 @@
-use std::io::{Error, ErrorKind};
+use std::fs::OpenOptions;
+use std::io::{Error, ErrorKind, Write};
 use std::path::{Path, PathBuf};
 
 use crate::directory::Directory;
@@ -58,12 +59,27 @@ impl File {
         }
     }
 
-    pub fn write_string(&self, content: String) -> std::io::Result<()> {
+    pub fn write_string<S: AsRef<str> + AsRef<[u8]>>(&self, content: S) -> std::io::Result<()> {
         let maybe_parent = &self.path.parent();
         if let Some(parent) = maybe_parent {
             std::fs::create_dir_all(parent)?;
         }
         std::fs::write(&self.path, content)
+    }
+
+    pub fn append_string<S: AsRef<str>>(&self, content: S) -> std::io::Result<()> {
+        let maybe_parent = &self.path.parent();
+        if let Some(parent) = maybe_parent {
+            std::fs::create_dir_all(parent)?;
+        }
+        let mut file = OpenOptions::new()
+            .append(true)
+            .create(true)
+            .open(&self.path)
+            .unwrap();
+
+        file.write(content.as_ref().as_bytes())
+            .map(|_| ())
     }
 
     pub fn write_byte_array(&self, content: Vec<u8>) -> std::io::Result<()> {
@@ -74,9 +90,9 @@ impl File {
         std::fs::write(&self.path, content)
     }
 
-    pub fn copy(&self, destination: &Path) -> std::io::Result<()> {
-        if PathFilter::is_whitelisted(&PathBuf::from(destination))? {
-            let maybe_dest_parent = destination.parent();
+    pub fn copy<P: AsRef<Path>>(&self, destination: &P) -> std::io::Result<()> {
+        if PathFilter::is_whitelisted(destination)? {
+            let maybe_dest_parent = destination.as_ref().parent();
             if let Some(dest_parent) = maybe_dest_parent {
                 std::fs::create_dir_all(dest_parent)?;
             }
@@ -86,9 +102,9 @@ impl File {
         }
     }
 
-    pub fn move_file(&self, destination: &Path) -> std::io::Result<()> {
-        if PathFilter::is_whitelisted(&PathBuf::from(destination))? {
-            let maybe_dest_parent = destination.parent();
+    pub fn move_file<P: AsRef<Path>>(&self, destination: &P) -> std::io::Result<()> {
+        if PathFilter::is_whitelisted(destination)? {
+            let maybe_dest_parent = destination.as_ref().parent();
             if let Some(dest_parent) = maybe_dest_parent {
                 std::fs::create_dir_all(dest_parent)?;
             }
@@ -116,5 +132,23 @@ impl <P: AsRef<Path>> From<P> for File where PathBuf: From<P> {
         File {
             path: PathBuf::from(path)
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::file::File;
+
+    #[test]
+    fn append_should_create_if_file_does_not_exist() {
+        let tmp_file = tempfile::NamedTempFile::new().unwrap();
+        let tmp_path = tmp_file.into_temp_path();
+
+        let file = File::from(tmp_path.to_path_buf());
+        file.delete().unwrap();
+        file.append_string("qwe").unwrap();
+        file.append_string("asd").unwrap();
+        let result = file.read_to_string().unwrap();
+        assert_eq!(result, "qweasd");
     }
 }
