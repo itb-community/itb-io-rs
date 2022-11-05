@@ -11,11 +11,15 @@ pub struct Directory {
     pub(crate) path: PathBuf,
 }
 
+fn normalize(path: &PathBuf) -> String {
+    path.to_str().unwrap().to_string().replace("\\", "/")
+}
+
 impl Directory {
     pub fn path(&self) -> String {
         // Have directories report their path with a trailing slash, since that's sometimes
         // convenient when working with paths in Lua.
-        self.path.to_str().unwrap().to_string().replace("\\", "/") + "/"
+        normalize(&self.path) + "/"
     }
 
     pub fn name(&self) -> String {
@@ -35,6 +39,11 @@ impl Directory {
         } else {
             Ok(None)
         }
+    }
+
+    pub fn relativize<P: AsRef<Path>>(&self, path: P) -> Option<String> {
+        pathdiff::diff_paths(path, &self.path)
+            .map(|path| normalize(&path))
     }
 
     pub fn files(&self) -> std::io::Result<Vec<File>> {
@@ -120,5 +129,21 @@ mod tests {
 
         assert_eq!("asd/", dir.path());
         assert_eq!("asd", dir.path.to_str().unwrap())
+    }
+
+    #[test]
+    fn relativize_should_remove_common_path() {
+        let dir = Directory::from("some/path");
+        let maybe_relative = dir.relativize("some/path/test");
+
+        assert_eq!("test", maybe_relative.unwrap());
+    }
+
+    #[test]
+    fn relativize_should_add_shorthands() {
+        let dir = Directory::from("some/path/test");
+        let maybe_relative = dir.relativize("some");
+
+        assert_eq!("../..", maybe_relative.unwrap());
     }
 }

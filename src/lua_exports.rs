@@ -170,6 +170,10 @@ impl LuaUserData for Directory {
                 .map_err(external_lua_error)
         });
 
+        methods.add_method("relativize", |_, this, (path,): (String,)| {
+            Ok(this.relativize(path))
+        });
+
         methods.add_method("file", |_, this, (paths,): (Variadic<String>,)| {
             let path: PathBuf = paths.iter().collect();
             let path = this.path.join(path);
