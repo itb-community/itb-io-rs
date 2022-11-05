@@ -1,5 +1,5 @@
 use std::error::Error;
-use std::path::{Component, PathBuf};
+use std::path::{Component, Path, PathBuf};
 use std::sync::Arc;
 
 use mlua::{Lua, UserDataMethods, Variadic};
@@ -14,42 +14,30 @@ use crate::path_filter::PathFilter;
 pub fn init(lua: &Lua) -> LuaResult<LuaTable> {
     let exports = lua.create_table()?;
 
-    exports.set("file", lua.create_function(file)?)?;
-    exports.set("directory", lua.create_function(directory)?)?;
+    exports.set("file", lua.create_function(lua_file)?)?;
+    exports.set("directory", lua.create_function(lua_directory)?)?;
     exports.set("save_data_directory", lua.create_function(save_data_directory)?)?;
 
     Ok(exports)
 }
 
-fn external_lua_error<T: Error + Send + Sync + 'static>(error: T) -> LuaError {
-    LuaError::ExternalError(Arc::new(error))
-}
-
 //region <Exported adapter functions>
-fn file(_: &Lua, (path, ): (String, )) -> LuaResult<File> {
+fn lua_file(_: &Lua, (path, ): (String, )) -> LuaResult<File> {
     let path = normalize(PathBuf::from(path));
     let normalized_path = path.absolutize()
         .map_err(external_lua_error)?;
 
-    if PathFilter::is_whitelisted(&normalized_path)? {
-        Ok(File::from(normalized_path))
-    } else {
-        Err(std::io::Error::new(std::io::ErrorKind::Other, "Path points to a file not within an allowed directory"))
-            .map_err(external_lua_error)
-    }
+    file(normalized_path)
+        .map_err(external_lua_error)
 }
 
-fn directory(_: &Lua, (path, ): (String, )) -> LuaResult<Directory> {
+fn lua_directory(_: &Lua, (path, ): (String, )) -> LuaResult<Directory> {
     let path = normalize(PathBuf::from(path));
     let normalized_path = path.absolutize()
         .map_err(external_lua_error)?;
 
-    if PathFilter::is_whitelisted(&normalized_path)? {
-        Ok(Directory::from(normalized_path))
-    } else {
-        Err(std::io::Error::new(std::io::ErrorKind::Other, "Path does not point to an allowed directory"))
-            .map_err(external_lua_error)
-    }
+    directory(normalized_path)
+        .map_err(external_lua_error)
 }
 
 fn save_data_directory(_: &Lua, (): ()) -> LuaResult<Directory> {
@@ -58,6 +46,26 @@ fn save_data_directory(_: &Lua, (): ()) -> LuaResult<Directory> {
         .map_err(external_lua_error)
 }
 //endregion
+
+fn external_lua_error<T: Error + Send + Sync + 'static>(error: T) -> LuaError {
+    LuaError::ExternalError(Arc::new(error))
+}
+
+fn file<P: AsRef<Path>>(path: P) -> std::io::Result<File> where PathBuf: From<P> {
+    if PathFilter::is_whitelisted(&path)? {
+        Ok(File::from(path))
+    } else {
+        Err(std::io::Error::new(std::io::ErrorKind::Other, "Path points to a file not within an allowed directory"))
+    }
+}
+
+fn directory<P: AsRef<Path>>(path: P) -> std::io::Result<Directory> where PathBuf: From<P> {
+    if PathFilter::is_whitelisted(&path)? {
+        Ok(Directory::from(path))
+    } else {
+        Err(std::io::Error::new(std::io::ErrorKind::Other, "Path does not point to an allowed directory"))
+    }
+}
 
 fn normalize(path: PathBuf) -> PathBuf {
     let first_component = path.components().into_iter().next().unwrap();
@@ -163,12 +171,22 @@ impl LuaUserData for Directory {
         });
 
         methods.add_method("file", |_, this, (paths,): (Variadic<String>,)| {
-            this.file(paths.to_vec())
+            let path: PathBuf = paths.iter().collect();
+            let path = this.path.join(path);
+            let normalized_path = path.absolutize()
+                .map_err(external_lua_error)?;
+
+            file(normalized_path)
                 .map_err(external_lua_error)
         });
 
         methods.add_method("directory", |_, this, (paths,): (Variadic<String>,)| {
-            this.directory(paths.to_vec())
+            let path: PathBuf = paths.iter().collect();
+            let path = this.path.join(path);
+            let normalized_path = path.absolutize()
+                .map_err(external_lua_error)?;
+
+            directory(normalized_path)
                 .map_err(external_lua_error)
         });
 

@@ -1,6 +1,8 @@
 use std::io::{Error, ErrorKind};
 use std::path::{Path, PathBuf};
+
 use walkdir::WalkDir;
+
 use crate::file::File;
 use crate::path_filter::PathFilter;
 
@@ -32,28 +34,6 @@ impl Directory {
             }
         } else {
             Ok(None)
-        }
-    }
-
-    pub fn file<P: AsRef<Path>>(&self, paths: Vec<P>) -> std::io::Result<File> {
-        let path: PathBuf = paths.iter().collect();
-        let path = self.path.join(path);
-
-        if PathFilter::is_whitelisted(&path)? {
-            Ok(File::from(path))
-        } else {
-            Err(Error::new(ErrorKind::Other, "File is not within an allowed directory"))
-        }
-    }
-
-    pub fn directory<P: AsRef<Path>>(&self, paths: Vec<P>) -> std::io::Result<Directory> {
-        let path: PathBuf = paths.iter().collect();
-        let path = self.path.join(path);
-
-        if PathFilter::is_whitelisted(&path)? {
-            Ok(Directory::from(path))
-        } else {
-            Err(Error::new(ErrorKind::Other, "Path does not point to an allowed directory"))
         }
     }
 
@@ -122,7 +102,7 @@ impl Directory {
     }
 }
 
-impl <P: AsRef<Path>> From<P> for Directory where PathBuf: From<P> {
+impl<P: AsRef<Path>> From<P> for Directory where PathBuf: From<P> {
     fn from(path: P) -> Self {
         Directory {
             path: PathBuf::from(path)
@@ -140,14 +120,5 @@ mod tests {
 
         assert_eq!("asd/", dir.path());
         assert_eq!("asd", dir.path.to_str().unwrap())
-    }
-
-    #[test]
-    fn file_should_create_file_from_joined_paths() {
-        let dir = Directory::from("asd");
-        let f = dir.file(vec!["qwe", "zxc"]).unwrap();
-
-        assert_eq!("asd/", dir.path());
-        assert_eq!("asd/qwe/zxc", f.path());
     }
 }
