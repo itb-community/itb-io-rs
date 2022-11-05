@@ -213,6 +213,13 @@ impl LuaUserData for Directory {
             Ok(this.exists())
         });
 
+        methods.add_method("is_ancestor", |_, this, (path,): (String,)| {
+            let path = normalize(PathBuf::from(path));
+            let normalized_path = path.absolutize()
+                .map_err(external_lua_error)?;
+            Ok(normalized_path.starts_with(&this.path))
+        });
+
         methods.add_method("delete", |_, this, ()| {
             this.delete()
                 .map_err(external_lua_error)
