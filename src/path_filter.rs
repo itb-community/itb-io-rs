@@ -2,6 +2,7 @@ use std::borrow::Cow;
 use std::io::{Error, ErrorKind};
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
+use directories::UserDirs;
 
 use lazy_static::lazy_static;
 use path_absolutize::Absolutize;
@@ -36,7 +37,7 @@ impl PathFilter {
         if it.is_some() {
             Ok(it.as_ref().unwrap().to_path_buf())
         } else {
-            if let Some(user_dirs) = directories::UserDirs::new() {
+            if let Some(user_dirs) = UserDirs::new() {
                 let mut candidates = vec![];
 
                 // Windows user documents storage
