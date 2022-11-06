@@ -41,6 +41,16 @@ impl Directory {
         }
     }
 
+    pub fn root(&self) -> std::io::Result<Directory> {
+        let root_path = if self.path.starts_with(PathFilter::game_directory()?) {
+            PathFilter::game_directory()?
+        } else {
+            PathFilter::save_data_directory()?
+        };
+
+        Ok(Directory::from(root_path))
+    }
+
     pub fn relativize<P: AsRef<Path>>(&self, path: P) -> Option<String> {
         pathdiff::diff_paths(path, &self.path)
             .map(|path| normalize(&path))

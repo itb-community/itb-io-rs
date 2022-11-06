@@ -43,6 +43,16 @@ impl File {
         }
     }
 
+    pub fn root(&self) -> std::io::Result<Directory> {
+        let root_path = if self.path.starts_with(PathFilter::game_directory()?) {
+            PathFilter::game_directory()?
+        } else {
+            PathFilter::save_data_directory()?
+        };
+
+        Ok(Directory::from(root_path))
+    }
+
     pub fn read_to_byte_array(&self) -> std::io::Result<Vec<u8>> {
         if self.exists() {
             std::fs::read(&self.path)

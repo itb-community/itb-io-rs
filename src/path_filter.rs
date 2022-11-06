@@ -22,7 +22,7 @@ impl PathFilter {
         Ok(result)
     }
 
-    fn game_directory() -> std::io::Result<PathBuf> {
+    pub fn game_directory() -> std::io::Result<PathBuf> {
         let cwd = std::env::current_dir()?;
         let result_cow = cwd.absolutize()?;
         match result_cow {

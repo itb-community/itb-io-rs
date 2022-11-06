@@ -103,6 +103,11 @@ impl LuaUserData for File {
                 .map_err(external_lua_error)
         });
 
+        methods.add_method("root", |_, this, ()| {
+            this.root()
+                .map_err(external_lua_error)
+        });
+
         methods.add_method("read_to_string", |_, this, ()| {
             this.read_to_string()
                 .map_err(external_lua_error)
@@ -167,6 +172,11 @@ impl LuaUserData for Directory {
 
         methods.add_method("parent", |_, this, ()| {
             this.parent()
+                .map_err(external_lua_error)
+        });
+
+        methods.add_method("root", |_, this, ()| {
+            this.root()
                 .map_err(external_lua_error)
         });
 
