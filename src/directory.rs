@@ -112,6 +112,15 @@ impl Directory {
         self.path.exists()
     }
 
+    pub fn is_ancestor<P: AsRef<Path>>(&self, path: P) -> std::io::Result<bool> {
+        let path = path.as_ref();
+        if path.is_absolute() {
+            Ok(path.starts_with(&self.path))
+        } else {
+            Err(Error::new(ErrorKind::Other, "Not an absolute path"))
+        }
+    }
+
     pub fn delete(&self) -> std::io::Result<()> {
         if self.exists() {
             std::fs::remove_dir_all(&self.path)
@@ -132,6 +141,7 @@ impl<P: AsRef<Path>> From<P> for Directory where PathBuf: From<P> {
 #[cfg(test)]
 mod tests {
     use crate::directory::Directory;
+    use crate::path_filter::PathFilter;
 
     #[test]
     fn path_should_be_reported_with_trailing_slash() {
@@ -155,5 +165,15 @@ mod tests {
         let maybe_relative = dir.relativize("some");
 
         assert_eq!("../..", maybe_relative.unwrap());
+    }
+
+    #[test]
+    fn is_ancestor_should_return_true_for_absolute_child_path() {
+        let dir = Directory::from(PathFilter::game_directory().unwrap().join("some/path"));
+        let test_path = Directory::from(dir.path.join("test")).path;
+        let result = dir.is_ancestor(test_path);
+
+        assert!(result.is_ok());
+        assert!(result.unwrap());
     }
 }
