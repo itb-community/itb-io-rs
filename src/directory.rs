@@ -12,14 +12,14 @@ pub struct Directory {
 }
 
 fn normalize(path: &PathBuf) -> String {
-    path.to_str().unwrap().to_string().replace("\\", "/")
+    path.to_str().unwrap().to_string().replace("\\", "/") + "/"
 }
 
 impl Directory {
     pub fn path(&self) -> String {
         // Have directories report their path with a trailing slash, since that's sometimes
         // convenient when working with paths in Lua.
-        normalize(&self.path) + "/"
+        normalize(&self.path)
     }
 
     pub fn name(&self) -> String {
