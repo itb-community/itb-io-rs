@@ -86,6 +86,11 @@ impl LuaUserData for File {
             Ok(this.path())
         });
 
+        methods.add_method("relative_path", |_, this, ()| {
+            this.relative_path()
+                .map_err(external_lua_error)
+        });
+
         methods.add_method("name", |_, this, ()| {
             Ok(this.name())
         });
@@ -164,6 +169,11 @@ impl LuaUserData for Directory {
     fn add_methods<'lua, M: UserDataMethods<'lua, Self>>(methods: &mut M) {
         methods.add_method("path", |_, this, ()| {
             Ok(this.path())
+        });
+
+        methods.add_method("relative_path", |_, this, ()| {
+            this.relative_path()
+                .map_err(external_lua_error)
         });
 
         methods.add_method("name", |_, this, ()| {

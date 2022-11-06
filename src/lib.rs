@@ -2,6 +2,7 @@ mod lua_exports;
 mod file;
 mod directory;
 mod path_filter;
+mod util;
 
 #[no_mangle]
 pub extern "C" fn luaopen_itb_io(lua_state: *mut mlua::lua_State) -> i32 {

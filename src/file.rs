@@ -4,15 +4,24 @@ use std::path::{Path, PathBuf};
 
 use crate::directory::Directory;
 use crate::path_filter::PathFilter;
+use crate::util::normalize;
 
 #[derive(Debug)]
 pub struct File {
-    pub(crate) path: PathBuf
+    pub(crate) path: PathBuf,
 }
 
 impl File {
     pub fn path(&self) -> String {
-        self.path.to_str().unwrap().to_string().replace("\\", "/")
+        normalize(&self.path)
+    }
+
+    pub fn relative_path(&self) -> std::io::Result<String> {
+        let normalized_path_relative_to_root = self.root()?.relativize(&self.path)
+            .map(|relative_path| normalize(relative_path))
+            .unwrap_or_else(|| "".to_string());
+
+        Ok(normalized_path_relative_to_root)
     }
 
     pub fn name(&self) -> String {
@@ -137,7 +146,7 @@ impl File {
     }
 }
 
-impl <P: AsRef<Path>> From<P> for File where PathBuf: From<P> {
+impl<P: AsRef<Path>> From<P> for File where PathBuf: From<P> {
     fn from(path: P) -> Self {
         File {
             path: PathBuf::from(path)
