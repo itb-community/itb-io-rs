@@ -16,7 +16,7 @@ impl Directory {
     pub fn path(&self) -> String {
         // Have directories report their path with a trailing slash, since that's sometimes
         // convenient when working with paths in Lua.
-        normalize(&self.path)
+        normalize(&self.path)  + "/"
     }
 
     pub fn relative_path(&self) -> std::io::Result<String> {
